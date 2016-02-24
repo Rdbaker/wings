@@ -25,24 +25,24 @@ enum Solidness {
   SOFT,       ///< Object causes collision, but doesn't impede.
   SPECTRAL,   ///< Object doesn't cause collisions.
 };
- 
+
 /// Count of number of modified attribute categories.
 const int ATTR_COUNT = 12;
 
 /// Categories of attributes that indicate modification.
 enum ObjectAttribute {
-  ID, 
+  ID,
   ACTIVE,
-  VISIBLE,            
+  VISIBLE,
   EVENTS,
-  BOX,                   
-  POS,               
-  TYPE,                
+  BOX,
+  POS,
+  TYPE,
   SPRITE,
-  ALTITUDE,               
-  SOLIDNESS,        
-  NO_SOFT,               
-  VELOCITY,           
+  ALTITUDE,
+  SOLIDNESS,
+  NO_SOFT,
+  VELOCITY,
 };
 
 class Object {
@@ -86,7 +86,7 @@ class Object {
 
   /// Get Object id.
   int getId() const;
-  
+
   /// Set type identifier of Object.
   void setType(std::string new_type);
 
@@ -104,9 +104,9 @@ class Object {
   virtual int eventHandler(const Event *p_event);
 
   ///< Return True if Object is HARD or SOFT, else false.
-  bool isSolid() const;    
+  bool isSolid() const;
 
-  /// Set solidness of Object, with checks for consistency.  
+  /// Set solidness of Object, with checks for consistency.
   /// Return 0 if ok, else -1.
   int setSolidness(Solidness new_solid);
 
@@ -122,10 +122,10 @@ class Object {
   /// Set altitude of Object, with checks for range [0, MAX_ALTITUDE].
   /// Return 0 if ok, else -1.
   int setAltitude(int new_altitude);
-   
+
   /// Return altitude of Object.
   int getAltitude() const;
-   
+
   /// Set x velocity of Object.
   void setXVelocity(float new_x_velocity);
 
@@ -168,12 +168,12 @@ class Object {
   /// Get bounding box of Object.
   Box getBox() const;
 
-  /// Register for interest in event.  
-  /// Keeps track of manager and event.  
+  /// Register for interest in event.
+  /// Keeps track of manager and event.
   /// Return 0 if ok, else -1.
   int registerInterest(std::string event_type);
 
-  /// Unregister for interest in event.  
+  /// Unregister for interest in event.
   /// Return 0 if ok, else -1.
   int unregisterInterest(std::string event_type);
 
@@ -219,7 +219,7 @@ class Object {
   int getSpriteSlowdown() const;
   void setSpriteSlowdownCount(int new_sprite_slowdown_count);
   int getSpriteSlowdownCount() const;
-  
+
   /// Serialize Object attributes to single string.
   /// e.g., "id:110,is_active:true, ...
   /// Only modified attributes are serialized (unless all is true).
@@ -227,12 +227,12 @@ class Object {
   virtual std::string serialize(bool all=false);
 
   /// Deserialize string to become Object attributes.
-  /// Return 0 if no errors, else -1.  
+  /// Return 0 if no errors, else -1.
   virtual int deserialize(std::string s);
 
   /// Return true if attribute modified since last serialize.
   virtual bool isModified(enum ObjectAttribute attribute) const;
-  
+
   /// Return true if any attribute modified since last serialize.
   virtual bool isModified() const;
 };

@@ -8,8 +8,13 @@
 #include "NetworkManager.h"
 
 
-int df::NetworkManager::startUp() {
+int df::NetworkManager::startUp(bool isHost) {
   this->sock = -1;
+  if(isHost) {
+    this->accept();
+  } else {
+    this->connect("127.0.0.1");
+  }
   return 0;
 }
 
@@ -38,6 +43,7 @@ int df::NetworkManager::getSocket() const {
 
 // wait for a client to connect
 int df::NetworkManager::accept(std::string port) {
+  df::LogManager &log_manager = df::LogManager::getInstance();
   int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
   struct addrinfo hints, *servinfo, *p;
   struct sockaddr_storage their_addr; // connector's address information
@@ -53,8 +59,8 @@ int df::NetworkManager::accept(std::string port) {
   hints.ai_flags = AI_PASSIVE; // use my IP
 
   if ((rv = ::getaddrinfo(NULL, port.c_str(), &hints, &servinfo)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    exit(1);
+    log_manager.writeLog("NetworkManager::accept(): Error! Could not getaddrinfo(), error: %s", gai_strerror(errno));
+    return -1;
   }
 
   // loop through all the results and bind to the first we can
@@ -62,20 +68,20 @@ int df::NetworkManager::accept(std::string port) {
     // Create an unconnected socket to which a remote client can connect. A relevant system call is socket().
     if ((sockfd = socket(p->ai_family, p->ai_socktype,
         p->ai_protocol)) == -1) {
-      perror("server: socket");
+      log_manager.writeLog("NetworkManager::accept(): Warning! Could not socket(), error: %s", gai_strerror(errno));
       continue;
     }
 
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
         sizeof(int)) == -1) {
-      perror("setsockopt");
-      exit(1);
+      log_manager.writeLog("NetworkManager::accept(): Error! Could not setsockopt(), error: %s", gai_strerror(errno));
+      return -1;
     }
 
     // Bind to the server's local address and port so a client can connect. A relevant system call is bind().
     if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       ::close(sockfd);
-      perror("server: bind");
+      log_manager.writeLog("NetworkManager::accept(): Warning! Could not bind(), error: %s", gai_strerror(errno));
       continue;
     }
 
@@ -85,51 +91,45 @@ int df::NetworkManager::accept(std::string port) {
   freeaddrinfo(servinfo); // all done with this structure
 
   if (p == NULL)  {
-    fprintf(stderr, "server: failed to bind\n");
-    exit(1);
+    log_manager.writeLog("NetworkManager::accept(): Error! Failed to bind(), error: %s", gai_strerror(errno));
+    return -1;
   }
 
   // Put the socket in a state to accept the other "half" of an Internet connection. A relevant system call is listen().
   if (listen(sockfd, 100) == -1) {
-    perror("listen");
-    exit(1);
+    log_manager.writeLog("NetworkManager::accept(): Error! Failed to listen(), error: %s", gai_strerror(errno));
+    return -1;
   }
 
   sa.sa_handler = sigchld_handler; // reap all dead processes
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART;
   if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-    perror("sigaction");
-    exit(1);
+    log_manager.writeLog("NetworkManager::accept(): Error! Failed to sigaction(), error: %s", gai_strerror(errno));
+    return -1;
   }
 
 
+  log_manager.writeLog("NetworkManager::accept(): host waiting for connection");
   // Wait (block) until the socket connected. A relevant system call is accept().
   while(1) {  // main accept() loop
     sin_size = sizeof their_addr;
     new_fd = ::accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
     if (new_fd == -1) {
-      perror("accept");
+      log_manager.writeLog("NetworkManager::accept(): Warning! Failed to accept(), error: %s", gai_strerror(errno));
       continue;
     }
 
     inet_ntop(their_addr.ss_family,
       get_in_addr((struct sockaddr *)&their_addr),
       s, sizeof s);
-    printf("server: got connection from %s\n", s);
+    log_manager.writeLog("NetworkManager::accept(): host got connection from %s", s);
 
-    if (!fork()) { // this is the child process
-      ::close(sockfd); // child doesn't need the listener
+    ::close(sockfd); // don't need the old listener
 
-      // update the "sock" variable
-      this->sock = new_fd;
+    // update the "sock" variable
+    this->sock = new_fd;
 
-      // do some computation or something
-
-      // we should only close on the shutDown method I think
-      //close(new_fd);
-    }
-    ::close(new_fd);  // parent doesn't need this
     return new_fd;
   }
 }
@@ -137,6 +137,7 @@ int df::NetworkManager::accept(std::string port) {
 
 // Return 0 if success, else -1.
 int df::NetworkManager::connect(std::string host, std::string port) {
+  df::LogManager &log_manager = df::LogManager::getInstance();
   int sockfd;
   struct addrinfo hints, *servinfo, *p;
   int rv;
@@ -146,21 +147,22 @@ int df::NetworkManager::connect(std::string host, std::string port) {
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 
+  log_manager.writeLog("NetworkManager::connect(): client attempting to connect");
   if ((rv = ::getaddrinfo(host.c_str(), port.c_str(), &hints, &servinfo)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    exit(1);
+    log_manager.writeLog("NetworkManager::connect(): Error! Failed to getaddrinfo(), error: %s", gai_strerror(errno));
+    return -1;
   }
 
   // loop through all the results and connect to the first we can
   for(p = servinfo; p != NULL; p = p->ai_next) {
     if ((sockfd = socket(p->ai_family, p->ai_socktype,
         p->ai_protocol)) == -1) {
-      perror("client: socket");
+      log_manager.writeLog("NetworkManager::connect(): Error! Failed to socket(), error: %s", gai_strerror(errno));
       return -1;
     }
 
     if (::connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-      perror("client: connect");
+      log_manager.writeLog("NetworkManager::connect(): Error! Failed to connect(), error: %s", gai_strerror(errno));
       ::close(sockfd);
       return -1;
     }
@@ -169,13 +171,13 @@ int df::NetworkManager::connect(std::string host, std::string port) {
   }
 
   if (p == NULL) {
-    fprintf(stderr, "client: failed to connect\n");
-    exit(2);
+    log_manager.writeLog("NetworkManager::connect(): Error! Failed to connect to host, error: %s", gai_strerror(errno));
+    return -1;
   }
 
   inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
       s, sizeof s);
-  printf("client: connecting to %s\n", s);
+  log_manager.writeLog("NetworkManager::connect(): connecting to host: %s", s);
 
   freeaddrinfo(servinfo); // all done with this structure
 
@@ -200,7 +202,9 @@ int df::NetworkManager::send(void *buffer, int bytes) {
 int df::NetworkManager::isData() const {
   int count = 0;
   if(ioctl(this->sock, FIONREAD, &count) < 0) {
-    perror("NetworkManager::isData error");
+    df::LogManager &log_manager = df::LogManager::getInstance();
+    log_manager.writeLog("NetworkManager::isData(): Error! ioctl() failed: %s", gai_strerror(errno));
+    return -1;
   }
   return count;
 }
@@ -218,6 +222,8 @@ int df::NetworkManager::receive(void *buffer, int nbytes, bool peek) {
     // receive the response
     if((resbytes = recv(this->sock, buffer, nbytes, flags) ) < 0) {
       // there's an error
+      df::LogManager &log_manager = df::LogManager::getInstance();
+      log_manager.writeLog("NetworkManager::receive(): Error! recv() failed: %s", gai_strerror(errno));
       return -1;
     } else if (resbytes == 0) {
       // we didn't receive any more bytes
@@ -228,6 +234,11 @@ int df::NetworkManager::receive(void *buffer, int nbytes, bool peek) {
     }
   }
   return totalread;
+}
+
+
+int df::NetworkManager::onEvent(const Event *p_event) const {
+  return 0;
 }
 
 

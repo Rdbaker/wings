@@ -137,6 +137,8 @@ void Hero::kbd(const df::EventKeyboard *p_keyboard_event) {
      world_manager.markForDelete(this);
     }
     break;
+ default:
+    break;
   };
 
   return;

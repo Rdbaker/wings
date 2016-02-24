@@ -2,8 +2,8 @@
 // GameStart.h
 //
 
-#include "Music.h"
-#include "ViewObject.h"
+#include "include/Music.h"
+#include "include/ViewObject.h"
 
 class GameStart : public df::ViewObject {
 

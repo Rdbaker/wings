@@ -1,12 +1,13 @@
 //
 // game.cpp
-// 
+//
 
 // Engine includes.
-#include "GameManager.h"
-#include "LogManager.h"
-#include "Pause.h"
-#include "ResourceManager.h"
+#include "include/GameManager.h"
+#include "include/LogManager.h"
+#include "NetworkManager.h"
+#include "include/Pause.h"
+#include "include/ResourceManager.h"
 
 // Game includes.
 #include "GameStart.h"
@@ -15,7 +16,7 @@
 // Function prototypes.
 void loadResources(void);
 void populateWorld(void);
- 
+
 int main(int argc, char *argv[]) {
   df::LogManager &log_manager = df::LogManager::getInstance();
 
@@ -26,6 +27,14 @@ int main(int argc, char *argv[]) {
     game_manager.shutDown();
     return 0;
   }
+
+  df::NetworkManager &net_manager = df::NetworkManager::getInstance();
+  if (net_manager.startUp(argc == 1))  {
+    log_manager.writeLog("Error starting network manager!");
+    net_manager.shutDown();
+    return 0;
+  }
+
 
   // Set flush of logfile during development (when done, make false).
   log_manager.setFlush(true);
@@ -40,10 +49,10 @@ int main(int argc, char *argv[]) {
 
   // Enable player to pause game.
   new df::Pause(df::Keyboard::F10);
- 
+
   // Run game (this blocks until game loop is over).
   game_manager.run();
-  
+
   // Shut everything down.
   game_manager.shutDown();
 }
@@ -68,9 +77,9 @@ void loadResources(void) {
 void populateWorld(void) {
 
   // Spawn some Stars.
-  for (int i=0; i<16; i++) 
+  for (int i=0; i<16; i++)
     new Star;
-   
+
   // Create GameStart object.
   new GameStart();
 }

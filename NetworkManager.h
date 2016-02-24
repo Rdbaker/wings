@@ -36,7 +36,7 @@ namespace df {
   class NetworkManager : public df::Manager {
 
    private:
-    NetworkManager();                       // Private since a singleton.
+    NetworkManager() {}                      // Private since a singleton.
     NetworkManager(NetworkManager const&);  // Don't allow copy.
     void operator=(NetworkManager const&);  // Don't allow assignment.
     int sock;                               // Connected network socket.
@@ -44,10 +44,13 @@ namespace df {
    public:
 
     // Get the one and only instance of the NetworkManager.
-    static NetworkManager &getInstance();
+    static NetworkManager &getInstance() {
+      static NetworkManager *instance = new NetworkManager();
+      return *instance;
+    }
 
     // Start up NetworkManager.
-    int startUp();
+    int startUp(bool isHost=true);
 
     // Shut down NetworkManager.
     void shutDown();
@@ -86,6 +89,8 @@ namespace df {
     // Return amount of data (0 if no data), -1 if not connected or error.
     int isData() const;
 
+    // override the parent
+    int onEvent(const Event *p_event) const;
   };
 
 } // end of namespace df

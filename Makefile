@@ -22,7 +22,7 @@ CC= g++
 #INCDIR= -I../dragonfly/include/ # path to dragonfly includes
 
 # 2) Uncomment below for Mac (64-bit)
-LINKLIB= -ldragonfly-mac64 -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio 
+LINKLIB= -ldragonfly-mac64 -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 LINKDIR= -L/usr/local/Cellar/sfml/2.3_1/lib/ -L./lib/ 
 INCDIR= -I/usr/local/Cellar/sfml/2.3_1/include/ -I./include/
 
@@ -39,6 +39,9 @@ GAMESRC= \
          Reticle.cpp \
          Saucer.cpp \
          Star.cpp \
+				 EventNetwork.cpp \
+				 NetworkManager.cpp \
+				 Sentry.cpp \
 
 GAME= game.cpp
 EXECUTABLE= game

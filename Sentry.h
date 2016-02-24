@@ -8,7 +8,7 @@
 #ifndef __SENTRY_H__
 #define __SENTRY_H__
 
-#include "Object.h"
+#include "include/Object.h"
 
 namespace df {
 

@@ -1,7 +1,7 @@
 //
 // Saucer.cpp
 //
- 
+
 // System includes.
 #include <stdlib.h>		// for rand()
 
@@ -31,7 +31,7 @@ Saucer::Saucer() {
 			 "saucer");
   } else {
     setSprite(p_temp_sprite);
-    setSpriteSlowdown(4);		
+    setSpriteSlowdown(4);
   }
 
   // Set object type.
@@ -57,50 +57,50 @@ Saucer::~Saucer() {
 // Handle event.
 // Return 0 if ignored, else 1.
 int Saucer::eventHandler(const df::Event *p_e) {
- 
+
   if (p_e->getType() == df::OUT_EVENT) {
     out();
     return 1;
   }
- 
+
   if (p_e->getType() == df::COLLISION_EVENT) {
     const df::EventCollision *p_collision_event = dynamic_cast <df::EventCollision const *> (p_e);
     hit(p_collision_event);
     return 1;
   }
-    
+
   if (p_e->getType() == NUKE_EVENT) {
-  
+
     // Create explosion.
     Explosion *p_explosion = new Explosion;
     p_explosion -> setPosition(this -> getPosition());
-  
+
     // Delete self.
     df::WorldManager &world_manager = df::WorldManager::getInstance();
     world_manager.markForDelete(this);
- 
+
     // Saucers appear stay around perpetually
     new Saucer;
   }
-    
+
   // If get here, have ignored this event.
   return 0;
 }
- 
+
 // If moved off left edge, move back to far right.
 void Saucer::out() {
- 
+
   // If haven't moved off left edge, then nothing to do.
   if (getPosition().getX() >= 0)
     return;
- 
+
   // Otherwise, move back to far right.
   moveToStart();
- 
+
   // Spawn new Saucer to make game get harder.
   new Saucer;
 }
- 
+
 // Called with Saucer collides.
 void Saucer::hit(const df::EventCollision *p_collision_event) {
 
@@ -126,7 +126,7 @@ void Saucer::hit(const df::EventCollision *p_collision_event) {
   }
 
   // If Hero, mark both objects for destruction.
-  if (((p_collision_event -> getObject1() -> getType()) == "Hero") || 
+  if (((p_collision_event -> getObject1() -> getType()) == "Hero") ||
       ((p_collision_event -> getObject2() -> getType()) == "Hero")) {
     df::WorldManager &world_manager = df::WorldManager::getInstance();
     world_manager.markForDelete(p_collision_event -> getObject1());
@@ -156,6 +156,6 @@ void Saucer::moveToStart() {
     temp_pos.setX(temp_pos.getX()+1);
     collision_list = world_manager.isCollision(this, temp_pos);
   }
-  
+
   world_manager.moveObject(this, temp_pos);
 }

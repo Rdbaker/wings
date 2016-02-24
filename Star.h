@@ -2,7 +2,7 @@
 // Star.h
 //
 
-#include "Object.h"
+#include "include/Object.h"
 
 #define STAR_CHAR '.'
 
