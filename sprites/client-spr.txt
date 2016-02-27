@@ -1,13 +1,13 @@
 frames 2
 width 4
 height 3
-color yellow
+color blue
 \   
-~==>
+~==-
 /   
 end
 \   
- ==>
+ ==-
 /   
 end
 eof

@@ -6,14 +6,19 @@
 // Engine includes
 #include "include/LogManager.h"
 #include "NetworkManager.h"
+#include "Role.h"
 
 
-int df::NetworkManager::startUp(bool isHost) {
+int df::NetworkManager::startUp(bool isHost, std::string host) {
   this->sock = -1;
   if(isHost) {
     this->accept();
   } else {
-    this->connect("127.0.0.1");
+    if(host.empty()) {
+      host = "127.0.0.1";
+    }
+
+    this->connect(host);
   }
   return 0;
 }
@@ -195,13 +200,35 @@ int df::NetworkManager::close() {
 
 // Return 0 if success, else -1.
 int df::NetworkManager::send(void *buffer, int bytes) {
-  return ::send(this->sock, buffer, bytes, 0);
+  int sentsofar = 0;
+  int sentthistime = 0;
+  df::LogManager &log_manager = df::LogManager::getInstance();
+  Role &role = Role::getInstance();
+  log_manager.writeLog("NetworkManager::send(): about to send: %s", buffer);
+  log_manager.writeLog("NetworkManager::send(): about to send this many: %d", bytes);
+
+  if(role.isHost()) {
+    while(sentsofar < bytes) {
+
+      sentthistime = ::send(this->sock, buffer, bytes, 0);
+
+    if(sentthistime == -1) {
+      log_manager.writeLog("NetworkManager::send(): Error! send() failed: %s", gai_strerror(errno));
+      return -1;
+    } else if(sentthistime == 0) {
+      break;
+    }
+
+    sentsofar += sentthistime;
+    }
+  }
+  return 0;
 }
 
 
 int df::NetworkManager::isData() const {
   int count = 0;
-  if(ioctl(this->sock, FIONREAD, &count) < 0) {
+  if(isConnected() && ioctl(this->sock, FIONREAD, &count) < 0) {
     df::LogManager &log_manager = df::LogManager::getInstance();
     log_manager.writeLog("NetworkManager::isData(): Error! ioctl() failed: %s", gai_strerror(errno));
     return -1;
@@ -214,16 +241,18 @@ int df::NetworkManager::isData() const {
 // If peek is true, leave data in socket else remove.
 // Return number of bytes received, else -1 if error.
 int df::NetworkManager::receive(void *buffer, int nbytes, bool peek) {
+  if(!isConnected())
+    return -1;
   int totalread = 0, resbytes = 0;
   int flags = (peek) ? MSG_PEEK & MSG_DONTWAIT : MSG_DONTWAIT;
   memset(buffer, 0, nbytes);
+  df::LogManager &log_manager = df::LogManager::getInstance();
 
   while (totalread < nbytes) {
     // receive the response
     if((resbytes = recv(this->sock, buffer, nbytes, flags) ) < 0) {
       // there's an error
-      df::LogManager &log_manager = df::LogManager::getInstance();
-      log_manager.writeLog("NetworkManager::receive(): Error! recv() failed: %s", gai_strerror(errno));
+      log_manager.writeLog("NetworkManager::receive(): Error! recv() failed: %s", strerror(errno));
       return -1;
     } else if (resbytes == 0) {
       // we didn't receive any more bytes
@@ -233,12 +262,9 @@ int df::NetworkManager::receive(void *buffer, int nbytes, bool peek) {
       totalread += resbytes;
     }
   }
+  log_manager.writeLog("NetworkManager::receive(): just read: %s", buffer);
+  log_manager.writeLog("NetworkManager::receive(): just read this many: %d", totalread);
   return totalread;
-}
-
-
-int df::NetworkManager::onEvent(const Event *p_event) const {
-  return 0;
 }
 
 

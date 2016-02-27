@@ -28,6 +28,7 @@
 // Engine includes.
 #include "include/Manager.h"
 #include "EventNetwork.h"
+#include "Sentry.h"
 
 #define DRAGONFLY_PORT "8732"   // Default port.
 
@@ -36,10 +37,13 @@ namespace df {
   class NetworkManager : public df::Manager {
 
    private:
-    NetworkManager() {}                      // Private since a singleton.
+    NetworkManager() {                      // Private since a singleton.
+      setType("df::network");
+    }
     NetworkManager(NetworkManager const&);  // Don't allow copy.
     void operator=(NetworkManager const&);  // Don't allow assignment.
     int sock;                               // Connected network socket.
+    Sentry sentry;
 
    public:
 
@@ -50,7 +54,7 @@ namespace df {
     }
 
     // Start up NetworkManager.
-    int startUp(bool isHost=true);
+    int startUp(bool isHost=true, std::string host="127.0.0.1");
 
     // Shut down NetworkManager.
     void shutDown();
@@ -88,9 +92,6 @@ namespace df {
     // Check if network data.
     // Return amount of data (0 if no data), -1 if not connected or error.
     int isData() const;
-
-    // override the parent
-    int onEvent(const Event *p_event) const;
   };
 
 } // end of namespace df

@@ -12,6 +12,7 @@
 // Game includes.
 #include "GameStart.h"
 #include "Star.h"
+#include "Role.h"
 
 // Function prototypes.
 void loadResources(void);
@@ -19,6 +20,7 @@ void populateWorld(void);
 
 int main(int argc, char *argv[]) {
   df::LogManager &log_manager = df::LogManager::getInstance();
+  Role &role = Role::getInstance();
 
   // Start up game manager.
   df::GameManager &game_manager = df::GameManager::getInstance();
@@ -29,7 +31,22 @@ int main(int argc, char *argv[]) {
   }
 
   df::NetworkManager &net_manager = df::NetworkManager::getInstance();
-  if (net_manager.startUp(argc == 1))  {
+
+  // get the host
+  char host[128];
+  memset(host, 0, 128);
+  if(argc > 2) {
+    strncpy(host, argv[2], 127);
+  }
+
+  if(argc == 1) {
+    role.setHost(true);
+    printf("Waiting for client to connect before starting...\n");
+  } else {
+    role.setHost(false);
+  }
+
+  if (net_manager.startUp(argc == 1, host))  {
     log_manager.writeLog("Error starting network manager!");
     net_manager.shutDown();
     return 0;
@@ -62,6 +79,7 @@ void loadResources(void) {
   df::ResourceManager &resource_manager = df::ResourceManager::getInstance();
   resource_manager.loadSprite("sprites/saucer-spr.txt", "saucer");
   resource_manager.loadSprite("sprites/ship-spr.txt", "ship");
+  resource_manager.loadSprite("sprites/client-spr.txt", "client");
   resource_manager.loadSprite("sprites/bullet-spr.txt", "bullet");
   resource_manager.loadSprite("sprites/explosion-spr.txt", "explosion");
   resource_manager.loadSprite("sprites/gamestart-spr.txt", "gamestart");

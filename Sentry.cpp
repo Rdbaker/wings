@@ -27,12 +27,11 @@ void df::Sentry::doStep() {
     // generate a network event
     net_manager.onEvent(new EventNetwork(numbytes));
   }
-  // no-op for now
 }
 
 
 int df::Sentry::eventHandler(const Event *p_e) {
-  if(p_e->getType() == NETWORK_EVENT) {
+  if(p_e->getType() == STEP_EVENT) {
     doStep();
   }
   return 0;

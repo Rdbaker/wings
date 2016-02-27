@@ -20,6 +20,9 @@ namespace df {
    public:
     Sentry();
     int eventHandler(const Event *p_e);
+
+    /// Assignment operator.
+    Sentry &operator=(const Sentry &rhs);
   };
 
 } // end of namespace df

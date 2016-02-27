@@ -2,8 +2,8 @@
 // Bullet.h
 //
 
-#include "EventCollision.h"
-#include "Object.h"
+#include "include/EventCollision.h"
+#include "include/Object.h"
 
 class Bullet : public df::Object {
 

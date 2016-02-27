@@ -42,6 +42,7 @@ GAMESRC= \
 				 EventNetwork.cpp \
 				 NetworkManager.cpp \
 				 Sentry.cpp \
+				 Role.cpp \
 
 GAME= game.cpp
 EXECUTABLE= game

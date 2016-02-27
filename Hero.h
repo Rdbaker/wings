@@ -2,9 +2,9 @@
 // Hero.h
 //
 
-#include "EventKeyboard.h"
-#include "EventMouse.h"
-#include "Object.h"
+#include "include/EventKeyboard.h"
+#include "include/EventMouse.h"
+#include "include/Object.h"
 #include "Reticle.h"
 
 class Hero : public df::Object {
@@ -22,9 +22,10 @@ class Hero : public df::Object {
   void fire(df::Position target);
   void step();
   void nuke();
+  bool isClient;
 
  public:
-  Hero();
+  Hero(bool isClient=false);
   ~Hero();
   int eventHandler(const df::Event *p_e);
 };

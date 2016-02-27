@@ -3,13 +3,13 @@
 //
 
 // Engine includes.
-#include "EventMouse.h"
-#include "EventStep.h"
-#include "EventView.h"
-#include "GameManager.h"
-#include "LogManager.h"
-#include "ResourceManager.h"
-#include "WorldManager.h"
+#include "include/EventMouse.h"
+#include "include/EventStep.h"
+#include "include/EventView.h"
+#include "include/GameManager.h"
+#include "include/LogManager.h"
+#include "include/ResourceManager.h"
+#include "include/WorldManager.h"
 
 // Game includes.
 #include "Bullet.h"
@@ -17,16 +17,22 @@
 #include "Explosion.h"
 #include "GameOver.h"
 #include "Hero.h"
+#include "Role.h"
 
-Hero::Hero() {
+Hero::Hero(bool isClient) {
 
   // Link to "ship" sprite.
   df::ResourceManager &resource_manager = df::ResourceManager::getInstance();
   df::LogManager &log_manager = df::LogManager::getInstance();
   df::Sprite *p_temp_sprite;
-  p_temp_sprite = resource_manager.getSprite("ship");
+  isClient = isClient;
+  if(isClient) {
+    p_temp_sprite = resource_manager.getSprite("client");
+  } else {
+    p_temp_sprite = resource_manager.getSprite("ship");
+  }
   if (!p_temp_sprite) {
-    log_manager.writeLog("Hero::Hero(): Warning! Sprite '%s' not found", 
+    log_manager.writeLog("Hero::Hero(): Warning! Sprite '%s' not found",
 			 "ship");
   } else {
     setSprite(p_temp_sprite);
@@ -46,8 +52,13 @@ Hero::Hero() {
 
   // Set starting location.
   df::WorldManager &world_manager = df::WorldManager::getInstance();
-  df::Position pos(7, world_manager.getBoundary().getVertical()/2);
-  setPosition(pos);
+  if(isClient) {
+    df::Position pos(7, world_manager.getBoundary().getVertical()/2+4);
+    setPosition(pos);
+  } else {
+    df::Position pos(7, world_manager.getBoundary().getVertical()/2-4);
+    setPosition(pos);
+  }
 
   // Create reticle for firing bullets.
   p_reticle = new Reticle();
@@ -59,13 +70,15 @@ Hero::Hero() {
   fire_slowdown = 30;
   fire_countdown = fire_slowdown;
   nuke_count = 1;
+  Role &role = Role::getInstance();
+  role.registerSyncObj(this);
 }
-  
+
 Hero::~Hero() {
 
   // Create GameOver object.
   GameOver *p_go = new GameOver;
-  
+
   // Make big explosion.
   for (int i=-8; i<=8; i+=5) {
     for (int j=-5; j<=5; j+=3) {
@@ -76,32 +89,46 @@ Hero::~Hero() {
       p_explosion -> setPosition(temp_pos);
     }
   }
- 
+
   // Mark Reticle for deletion.
   df::WorldManager::getInstance().markForDelete(p_reticle);
 }
- 
+
 // Handle event.
 // Return 0 if ignored, else 1.
 int Hero::eventHandler(const df::Event *p_e) {
+  Role &role = Role::getInstance();
 
   if (p_e->getType() == df::KEYBOARD_EVENT) {
-    const df::EventKeyboard *p_keyboard_event = dynamic_cast <const df::EventKeyboard *> (p_e);
-    kbd(p_keyboard_event);
+    // if the ship is the host and so is the server
+    if(role.isHost() && !isClient) {
+      const df::EventKeyboard *p_keyboard_event = dynamic_cast <const df::EventKeyboard *> (p_e);
+      kbd(p_keyboard_event);
+    } else if(!role.isHost() && isClient) {
+      // the ship and server is the client
+      // send the event to the server
+    }
     return 1;
   }
 
   if (p_e->getType() == df::MOUSE_EVENT) {
-    const df::EventMouse *p_mouse_event = dynamic_cast <const df::EventMouse *> (p_e);
-    mouse(p_mouse_event);
+    if(role.isHost() && !isClient) {
+      const df::EventMouse *p_mouse_event = dynamic_cast <const df::EventMouse *> (p_e);
+      mouse(p_mouse_event);
+    } else if(!role.isHost() && isClient) {
+      // the ship and server is the client
+      // send the event
+    }
     return 1;
   }
 
   if (p_e->getType() == df::STEP_EVENT) {
-    step();
+    if(role.isHost()) {
+      step();
+    }
     return 1;
   }
- 
+
   // If get here, have ignored this event.
   return 0;
 }
@@ -155,7 +182,7 @@ void Hero::move(int dy) {
   // If stays on window, allow move.
   df::Position new_pos(getPosition().getX(), getPosition().getY() + dy);
   df::WorldManager &world_manager = df::WorldManager::getInstance();
-  if ((new_pos.getY() > 3) && 
+  if ((new_pos.getY() > 3) &&
       (new_pos.getY() < world_manager.getBoundary().getVertical()-1))
     world_manager.moveObject(this, new_pos);
 }
@@ -196,7 +223,7 @@ void Hero::step() {
 void Hero::nuke() {
 
   // Check if nukes left.
-  if (!nuke_count) 
+  if (!nuke_count)
     return;
   nuke_count--;
 
@@ -204,7 +231,7 @@ void Hero::nuke() {
   df::WorldManager &world_manager = df::WorldManager::getInstance();
   EventNuke nuke;
   world_manager.onEvent(&nuke);
- 
+
   // Send "view" event do decrease number of nukes to interested ViewObjects.
   df::EventView ev("Nukes", -1, true);
   world_manager.onEvent(&ev);

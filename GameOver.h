@@ -2,7 +2,7 @@
 // GameOver.h
 //
 
-#include "ViewObject.h"
+#include "include/ViewObject.h"
 
 class GameOver : public df::ViewObject {
 

@@ -2,8 +2,8 @@
 // Points.h
 // 
 
-#include "Event.h"		
-#include "ViewObject.h"
+#include "include/Event.h"		
+#include "include/ViewObject.h"
 
 #define POINTS_STRING "Points"
 

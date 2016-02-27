@@ -2,7 +2,7 @@
 // EventNuke.h
 //
 
-#include "Event.h"
+#include "include/Event.h"
 
 const std::string NUKE_EVENT =  "nuke";
 

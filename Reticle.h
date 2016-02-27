@@ -2,7 +2,7 @@
 // Reticle.h
 //
 
-#include "Object.h"
+#include "include/Object.h"
 
 #define RETICLE_CHAR '+'
 

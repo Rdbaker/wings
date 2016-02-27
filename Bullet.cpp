@@ -7,9 +7,11 @@
 #include "WorldManager.h"
 #include "ResourceManager.h"
 #include "EventOut.h"
+#include "EventStep.h"
 
 // Game includes.
 #include "Bullet.h"
+#include "Role.h"
 #include "Saucer.h"
 
 Bullet::Bullet(df::Position hero_pos) {
@@ -33,6 +35,8 @@ Bullet::Bullet(df::Position hero_pos) {
   // Set starting location, based on hero's position passed in.
   df::Position pos(hero_pos.getX()+3, hero_pos.getY());
   setPosition(pos);
+  Role &role = Role::getInstance();
+  role.registerSyncObj(this);
 }
 
 // Handle event.

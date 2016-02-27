@@ -3,17 +3,18 @@
 //
 
 // Engine includes.
-#include "Color.h"
-#include "EventKeyboard.h"
-#include "GameManager.h"
-#include "LogManager.h"
-#include "ResourceManager.h"
-#include "WorldManager.h"
+#include "include/Color.h"
+#include "include/EventKeyboard.h"
+#include "include/GameManager.h"
+#include "include/LogManager.h"
+#include "include/ResourceManager.h"
+#include "include/WorldManager.h"
 
 // Game includes.
 #include "GameStart.h"
 #include "Hero.h"
-#include "Music.h"
+#include "Role.h"
+#include "include/Music.h"
 #include "Points.h"
 #include "Saucer.h"
 
@@ -28,7 +29,7 @@ GameStart::GameStart() {
     log_manager.writeLog("GameStart::GameStart(): Warning! Sprite 'gamestart' not found");
   } else {
     setSprite(p_temp_sprite);
-    setSpriteSlowdown(15);		  
+    setSpriteSlowdown(15);
   }
 
   // Put in center of screen.
@@ -73,13 +74,19 @@ int GameStart::eventHandler(const df::Event *p_e) {
 
 void GameStart::start() {
 
-  // Create hero.
-  new Hero;
+  Role &role = Role::getInstance();
+  if(role.isHost()) {
+    // Create hero.
+    new Hero(true);
+    new Hero;
 
-  // Spawn some saucers to shoot.
-  for (int i=0; i<16; i++)
-    new Saucer;
+    // Spawn some saucers to shoot.
+    for (int i=0; i<16; i++)
+      new Saucer;
 
+  } else {
+    // the client should wait for the host to be ready
+  }
   // Setup heads-up display.
   new Points;		                     // Points display.
   df::ViewObject *p_vo = new df::ViewObject; // Count of nukes.

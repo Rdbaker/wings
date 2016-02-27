@@ -6,17 +6,19 @@
 #include <stdlib.h>		// for rand()
 
 // Engine includes.
-#include "EventCollision.h"
+#include "include/EventCollision.h"
 #include "EventNuke.h"
-#include "EventOut.h"
-#include "EventView.h"
-#include "LogManager.h"
-#include "ResourceManager.h"
-#include "WorldManager.h"
+#include "include/EventOut.h"
+#include "include/EventStep.h"
+#include "include/EventView.h"
+#include "include/LogManager.h"
+#include "include/ResourceManager.h"
+#include "include/WorldManager.h"
 
 // Game includes.
 #include "Explosion.h"
 #include "Points.h"
+#include "Role.h"
 #include "Saucer.h"
 
 Saucer::Saucer() {
@@ -44,6 +46,8 @@ Saucer::Saucer() {
   moveToStart();
   // Register interest in "nuke" event.
   registerInterest(NUKE_EVENT);
+  Role &role = Role::getInstance();
+  role.registerSyncObj(this);
 }
 Saucer::~Saucer() {
 

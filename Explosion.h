@@ -2,7 +2,7 @@
 // Explosion.h
 //
 
-#include "Object.h"
+#include "include/Object.h"
 
 class Explosion : public df::Object {
 
