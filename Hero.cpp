@@ -10,6 +10,7 @@
 #include "include/LogManager.h"
 #include "include/ResourceManager.h"
 #include "include/WorldManager.h"
+#include "NetworkManager.h"
 
 // Game includes.
 #include "Bullet.h"
@@ -19,13 +20,12 @@
 #include "Hero.h"
 #include "Role.h"
 
-Hero::Hero(bool isClient) {
+Hero::Hero(bool isClient) : isClient(isClient) {
 
   // Link to "ship" sprite.
   df::ResourceManager &resource_manager = df::ResourceManager::getInstance();
   df::LogManager &log_manager = df::LogManager::getInstance();
   df::Sprite *p_temp_sprite;
-  isClient = isClient;
   if(isClient) {
     p_temp_sprite = resource_manager.getSprite("client");
   } else {
@@ -71,11 +71,15 @@ Hero::Hero(bool isClient) {
   fire_countdown = fire_slowdown;
   nuke_count = 1;
   Role &role = Role::getInstance();
-  role.registerSyncObj(this);
+  if(role.isHost()) {
+    role.registerSyncObj(this);
+    log_manager.writeLog("Hero::Hero(): INFO! registered with %s", serialize().c_str());
+  }
 }
 
 Hero::~Hero() {
-
+  df::LogManager &log_manager = df::LogManager::getInstance();
+  log_manager.writeLog("Hero::~Hero(): INFO! destroying hero");
   // Create GameOver object.
   GameOver *p_go = new GameOver;
 
@@ -92,6 +96,9 @@ Hero::~Hero() {
 
   // Mark Reticle for deletion.
   df::WorldManager::getInstance().markForDelete(p_reticle);
+
+  Role &role = Role::getInstance();
+  role.unregisterSyncObj(this);
 }
 
 // Handle event.
@@ -101,12 +108,16 @@ int Hero::eventHandler(const df::Event *p_e) {
 
   if (p_e->getType() == df::KEYBOARD_EVENT) {
     // if the ship is the host and so is the server
+    const df::EventKeyboard *p_keyboard_event = dynamic_cast <const df::EventKeyboard *> (p_e);
     if(role.isHost() && !isClient) {
-      const df::EventKeyboard *p_keyboard_event = dynamic_cast <const df::EventKeyboard *> (p_e);
       kbd(p_keyboard_event);
     } else if(!role.isHost() && isClient) {
       // the ship and server is the client
-      // send the event to the server
+      // send the event to the host server
+      df::NetworkManager &net_mgr = df::NetworkManager::getInstance();
+      std::string msg = "KEY:" + std::to_string(p_keyboard_event->getKey());
+      printf("about to send the event: %s\n", msg.c_str());
+      net_mgr.send((void*)msg.c_str(), msg.length());
     }
     return 1;
   }
@@ -161,6 +172,8 @@ void Hero::kbd(const df::EventKeyboard *p_keyboard_event) {
  case df::Keyboard::Q:        // quit
    if (p_keyboard_event->getKeyboardAction() == df::KEY_PRESSED) {
      df::WorldManager &world_manager = df::WorldManager::getInstance();
+     df::NetworkManager &net_mgr = df::NetworkManager::getInstance();
+     new GameOver;
      world_manager.markForDelete(this);
     }
     break;
@@ -196,7 +209,8 @@ void Hero::fire(df::Position target) {
   fire_countdown = fire_slowdown;
 
   // Fire Bullet towards target.
-  Bullet *p = new Bullet(getPosition());
+  df::Position *pos = new df::Position(getPosition().getX(), getPosition().getY());
+  Bullet *p = new Bullet(*pos);
   p->setYVelocity((float) (target.getY() - getPosition().getY()) /
 		  (float) (target.getX() - getPosition().getX()));
 

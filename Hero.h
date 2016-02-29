@@ -22,7 +22,7 @@ class Hero : public df::Object {
   void fire(df::Position target);
   void step();
   void nuke();
-  bool isClient;
+  const bool isClient;
 
  public:
   Hero(bool isClient=false);

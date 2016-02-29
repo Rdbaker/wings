@@ -12,6 +12,8 @@
 
 // Game includes.
 #include "GameStart.h"
+#include "NetworkManager.h"
+#include "EventNetwork.h"
 #include "Hero.h"
 #include "Role.h"
 #include "include/Music.h"
@@ -23,7 +25,10 @@ GameStart::GameStart() {
 
   // Link to "message" sprite.
   df::ResourceManager &resource_manager = df::ResourceManager::getInstance();
-  df::Sprite *p_temp_sprite = resource_manager.getSprite("gamestart");
+  Role &role = Role::getInstance();
+  df::Sprite *p_temp_sprite = role.isHost() ? resource_manager.getSprite("gamestart") : resource_manager.getSprite("clientstart");
+
+
   if (!p_temp_sprite) {
     df::LogManager &log_manager = df::LogManager::getInstance();
     log_manager.writeLog("GameStart::GameStart(): Warning! Sprite 'gamestart' not found");
@@ -37,10 +42,12 @@ GameStart::GameStart() {
 
   // Register for "keyboard" event.
   registerInterest(df::KEYBOARD_EVENT);
+  df::NetworkManager &net_mgr = df::NetworkManager::getInstance();
+  net_mgr.registerInterest(this, df::NETWORK_EVENT);
 
   // Play start music.
   p_music = df::ResourceManager::getInstance().getMusic("start music");
-  playMusic();
+  //playMusic();
 }
 
 // Play start music.
@@ -52,8 +59,9 @@ void GameStart::playMusic() {
 // Return 0 if ignored, else 1.
 int GameStart::eventHandler(const df::Event *p_e) {
   df::GameManager &game_manager = df::GameManager::getInstance();
+  Role &role = Role::getInstance();
 
-  if (p_e->getType() == df::KEYBOARD_EVENT) {
+  if (p_e->getType() == df::KEYBOARD_EVENT) {// && role.isHost()) {
     df::EventKeyboard *p_keyboard_event = (df::EventKeyboard *) p_e;
     switch (p_keyboard_event->getKey()) {
     case df::Keyboard::P: 			// play
@@ -68,6 +76,9 @@ int GameStart::eventHandler(const df::Event *p_e) {
     return 1;
   }
 
+  //if (p_e->getType() == df::NETWORK_EVENT)
+    //start();
+
   // If get here, have ignored this event.
   return 0;
 }
@@ -75,18 +86,14 @@ int GameStart::eventHandler(const df::Event *p_e) {
 void GameStart::start() {
 
   Role &role = Role::getInstance();
-  if(role.isHost()) {
-    // Create hero.
-    new Hero(true);
-    new Hero;
+  // Create hero.
+  new Hero(true);
+  new Hero;
 
-    // Spawn some saucers to shoot.
-    for (int i=0; i<16; i++)
-      new Saucer;
+  // Spawn some saucers to shoot.
+  for (int i=0; i<16; i++)
+    new Saucer;
 
-  } else {
-    // the client should wait for the host to be ready
-  }
   // Setup heads-up display.
   new Points;		                     // Points display.
   df::ViewObject *p_vo = new df::ViewObject; // Count of nukes.

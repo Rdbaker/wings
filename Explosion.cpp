@@ -3,14 +3,16 @@
 //
 
 // Engine includes.
-#include "EventStep.h"
-#include "GameManager.h"
-#include "LogManager.h"
-#include "ResourceManager.h"
-#include "WorldManager.h"
+#include "include/EventStep.h"
+#include "include/GameManager.h"
+#include "include/LogManager.h"
+#include "include/ResourceManager.h"
+#include "include/WorldManager.h"
+#include "NetworkManager.h"
 
 // Game includes.
 #include "Explosion.h"
+#include "Role.h"
 
 Explosion::Explosion() {
   registerInterest(df::STEP_EVENT);
@@ -30,6 +32,9 @@ Explosion::Explosion() {
 
   time_to_live =  getSprite()->getFrameCount();
   setSolidness(df::SPECTRAL);
+  Role &role = Role::getInstance();
+  if(role.isHost())
+    role.registerSyncObj(this);
 }
 
 // Handle event.
@@ -48,8 +53,13 @@ int Explosion::eventHandler(const df::Event *p_e) {
 // Count down until explosion finished.
 void Explosion::step() {
   time_to_live--;
-  if (time_to_live <= 0){
+  Role &role = Role::getInstance();
+  if (time_to_live <= 0 && role.isHost()){
     df::WorldManager &world_manager = df::WorldManager::getInstance();
     world_manager.markForDelete(this);
+    role.unregisterSyncObj(this);
+    df::NetworkManager &net_manager = df::NetworkManager::getInstance();
+    std::string buf1 = getId() > 99 ? "0112Xid:" + std::to_string(getId()) : "0102Xid:" + std::to_string(getId());
+    net_manager.send((void *)buf1.c_str(), buf1.length());
   }
 }

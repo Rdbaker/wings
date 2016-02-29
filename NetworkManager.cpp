@@ -222,6 +222,7 @@ int df::NetworkManager::send(void *buffer, int bytes) {
     sentsofar += sentthistime;
     }
   }
+  log_manager.writeLog("NetworkManager::send(): finished sending");
   return 0;
 }
 
@@ -244,7 +245,7 @@ int df::NetworkManager::receive(void *buffer, int nbytes, bool peek) {
   if(!isConnected())
     return -1;
   int totalread = 0, resbytes = 0;
-  int flags = (peek) ? MSG_PEEK & MSG_DONTWAIT : MSG_DONTWAIT;
+  int flags = (peek) ? MSG_PEEK | MSG_DONTWAIT : MSG_DONTWAIT;
   memset(buffer, 0, nbytes);
   df::LogManager &log_manager = df::LogManager::getInstance();
 

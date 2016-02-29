@@ -13,5 +13,6 @@ class Bullet : public df::Object {
 
  public:
   Bullet(df::Position hero_pos);
+  ~Bullet();
   int eventHandler(const df::Event *p_e);
 };

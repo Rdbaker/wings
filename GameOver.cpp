@@ -19,6 +19,7 @@ GameOver::GameOver() {
   df::NetworkManager &net_mgr = df::NetworkManager::getInstance();
   Role &role = Role::getInstance();
   if(role.isHost()) {
+    printf("About to send the shutdown signal\n");
     std::string buf = "GAMEOVER";
     net_mgr.send((void*)buf.c_str(), 8);
   }

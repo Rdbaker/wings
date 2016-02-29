@@ -65,7 +65,11 @@ int main(int argc, char *argv[]) {
   populateWorld();
 
   // Enable player to pause game.
-  new df::Pause(df::Keyboard::F10);
+  if(role.isHost()) {
+    new df::Pause(df::Keyboard::F10);
+  } else {
+    new df::Pause(df::Keyboard::F11);
+  }
 
   // Run game (this blocks until game loop is over).
   game_manager.run();
@@ -83,6 +87,7 @@ void loadResources(void) {
   resource_manager.loadSprite("sprites/bullet-spr.txt", "bullet");
   resource_manager.loadSprite("sprites/explosion-spr.txt", "explosion");
   resource_manager.loadSprite("sprites/gamestart-spr.txt", "gamestart");
+  resource_manager.loadSprite("sprites/clientstart-spr.txt", "clientstart");
   resource_manager.loadSprite("sprites/gameover-spr.txt", "gameover");
   resource_manager.loadSound("sounds/fire.wav", "fire");
   resource_manager.loadSound("sounds/explode.wav", "explode");

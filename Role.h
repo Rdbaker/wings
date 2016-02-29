@@ -19,6 +19,7 @@ class Role : public df::Object {
   bool is_host;                 // True if hosting game.
   bool has_started;
   df::ObjectList obj_list;      // list of objects to synchronize
+  bool is_game_over;
 
  public:
   // Get the one and only instance of the Role.
@@ -36,9 +37,15 @@ class Role : public df::Object {
   // return true if the game has started
   bool hasStarted() const;
 
+  // send a message to create an entity to the client
+  void sendCreateEntity(Object *obj);
+
   // register an object to synchronize
   void registerSyncObj(Object *p_obj);
+  void unregisterSyncObj(Object *p_o);
   int eventHandler(const df::Event *p_e);
 };
+
+std::string fixedLength(int value, int digits = 3);
 
 #endif // __ROLE_H__

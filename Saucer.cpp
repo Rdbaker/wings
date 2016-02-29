@@ -13,6 +13,7 @@
 #include "include/EventView.h"
 #include "include/LogManager.h"
 #include "include/ResourceManager.h"
+#include "NetworkManager.h"
 #include "include/WorldManager.h"
 
 // Game includes.
@@ -47,8 +48,12 @@ Saucer::Saucer() {
   // Register interest in "nuke" event.
   registerInterest(NUKE_EVENT);
   Role &role = Role::getInstance();
-  role.registerSyncObj(this);
+  if(role.isHost()) {
+    Role &role = Role::getInstance();
+    role.registerSyncObj(this);
+  }
 }
+
 Saucer::~Saucer() {
 
   // Send "view" event with points to interested ViewObjects.
@@ -56,66 +61,14 @@ Saucer::~Saucer() {
   df::EventView ev(POINTS_STRING, 10, true);
   df::WorldManager &world_manager = df::WorldManager::getInstance();
   world_manager.onEvent(&ev);
-}
+  Role &role = Role::getInstance();
+  role.unregisterSyncObj(this);
 
-// Handle event.
-// Return 0 if ignored, else 1.
-int Saucer::eventHandler(const df::Event *p_e) {
+  if(role.isHost()) {
+    df::NetworkManager &net_manager = df::NetworkManager::getInstance();
+    std::string buf1 = getId() > 99 ? "0112Sid:" + std::to_string(getId()) : "0102Sid:" + std::to_string(getId());
+    net_manager.send((void *)buf1.c_str(), buf1.length());
 
-  if (p_e->getType() == df::OUT_EVENT) {
-    out();
-    return 1;
-  }
-
-  if (p_e->getType() == df::COLLISION_EVENT) {
-    const df::EventCollision *p_collision_event = dynamic_cast <df::EventCollision const *> (p_e);
-    hit(p_collision_event);
-    return 1;
-  }
-
-  if (p_e->getType() == NUKE_EVENT) {
-
-    // Create explosion.
-    Explosion *p_explosion = new Explosion;
-    p_explosion -> setPosition(this -> getPosition());
-
-    // Delete self.
-    df::WorldManager &world_manager = df::WorldManager::getInstance();
-    world_manager.markForDelete(this);
-
-    // Saucers appear stay around perpetually
-    new Saucer;
-  }
-
-  // If get here, have ignored this event.
-  return 0;
-}
-
-// If moved off left edge, move back to far right.
-void Saucer::out() {
-
-  // If haven't moved off left edge, then nothing to do.
-  if (getPosition().getX() >= 0)
-    return;
-
-  // Otherwise, move back to far right.
-  moveToStart();
-
-  // Spawn new Saucer to make game get harder.
-  new Saucer;
-}
-
-// Called with Saucer collides.
-void Saucer::hit(const df::EventCollision *p_collision_event) {
-
-  // If Saucer on Saucer, ignore.
-  if ((p_collision_event -> getObject1() -> getType() == "Saucer") &&
-      (p_collision_event -> getObject2() -> getType() == "Saucer"))
-    return;
-
-  // If Bullet, create explosion and make new Saucer.
-  if ((p_collision_event -> getObject1() -> getType() == "Bullet") ||
-      (p_collision_event -> getObject2() -> getType() == "Bullet")) {
 
     // Create an explosion.
     Explosion *p_explosion = new Explosion;
@@ -128,38 +81,106 @@ void Saucer::hit(const df::EventCollision *p_collision_event) {
     // Saucers appear stay around perpetually.
     new Saucer;
   }
+}
 
-  // If Hero, mark both objects for destruction.
-  if (((p_collision_event -> getObject1() -> getType()) == "Hero") ||
-      ((p_collision_event -> getObject2() -> getType()) == "Hero")) {
-    df::WorldManager &world_manager = df::WorldManager::getInstance();
-    world_manager.markForDelete(p_collision_event -> getObject1());
-    world_manager.markForDelete(p_collision_event -> getObject2());
+// Handle event.
+// Return 0 if ignored, else 1.
+int Saucer::eventHandler(const df::Event *p_e) {
+  Role &role = Role::getInstance();
+  if(role.isHost()) {
+    if (p_e->getType() == df::OUT_EVENT) {
+      out();
+      return 1;
+    }
+
+    if (p_e->getType() == df::COLLISION_EVENT) {
+      const df::EventCollision *p_collision_event = dynamic_cast <df::EventCollision const *> (p_e);
+      hit(p_collision_event);
+      return 1;
+    }
+
+    if (p_e->getType() == NUKE_EVENT) {
+
+      // Create explosion.
+      Explosion *p_explosion = new Explosion;
+      p_explosion -> setPosition(this -> getPosition());
+
+      // Delete self.
+      df::WorldManager &world_manager = df::WorldManager::getInstance();
+      world_manager.markForDelete(this);
+
+      // Saucers appear stay around perpetually
+      new Saucer;
+    }
+  }
+
+  // If get here, have ignored this event.
+  return 0;
+}
+
+// If moved off left edge, move back to far right.
+void Saucer::out() {
+  Role &role = Role::getInstance();
+  if(role.isHost()) {
+
+    // If haven't moved off left edge, then nothing to do.
+    if (getPosition().getX() >= 0)
+      return;
+
+    // Otherwise, move back to far right.
+    moveToStart();
+
+    // Spawn new Saucer to make game get harder.
+    new Saucer;
+  }
+}
+
+// Called with Saucer collides.
+void Saucer::hit(const df::EventCollision *p_collision_event) {
+  Role &role = Role::getInstance();
+  if(role.isHost()) {
+
+    // If Saucer on Saucer, ignore.
+    if ((p_collision_event -> getObject1() -> getType() == "Saucer") &&
+        (p_collision_event -> getObject2() -> getType() == "Saucer"))
+      return;
+
+    // If Hero, mark both objects for destruction.
+    if (((p_collision_event -> getObject1() -> getType()) == "Hero") ||
+        ((p_collision_event -> getObject2() -> getType()) == "Hero")) {
+      df::WorldManager &world_manager = df::WorldManager::getInstance();
+      world_manager.markForDelete(p_collision_event -> getObject1());
+      world_manager.markForDelete(p_collision_event -> getObject2());
+    }
   }
 
 }
 
 // Move Saucer to starting location on right side of window.
 void Saucer::moveToStart() {
-  df::WorldManager &world_manager = df::WorldManager::getInstance();
-  df::Position temp_pos;
+  Role &role = Role::getInstance();
+  if(role.isHost()) {
 
-  // Get world boundaries.
-  int world_horiz = world_manager.getBoundary().getHorizontal();
-  int world_vert = world_manager.getBoundary().getVertical();
+    df::WorldManager &world_manager = df::WorldManager::getInstance();
+    df::Position temp_pos;
 
-  // x is off right side of window.
-  temp_pos.setX(world_horiz + rand()%world_horiz + 3);
+    // Get world boundaries.
+    int world_horiz = world_manager.getBoundary().getHorizontal();
+    int world_vert = world_manager.getBoundary().getVertical();
 
-  // y is in vertical range.
-  temp_pos.setY(rand()%(world_vert-4) + 4);
+    // x is off right side of window.
+    temp_pos.setX(world_horiz + rand()%world_horiz + 3);
 
-  // If collision, move right slightly until empty space.
-  df::ObjectList collision_list = world_manager.isCollision(this, temp_pos);
-  while (!collision_list.isEmpty()) {
-    temp_pos.setX(temp_pos.getX()+1);
-    collision_list = world_manager.isCollision(this, temp_pos);
+    // y is in vertical range.
+    temp_pos.setY(rand()%(world_vert-4) + 4);
+
+    // If collision, move right slightly until empty space.
+    df::ObjectList collision_list = world_manager.isCollision(this, temp_pos);
+    while (!collision_list.isEmpty()) {
+      temp_pos.setX(temp_pos.getX()+1);
+      collision_list = world_manager.isCollision(this, temp_pos);
+    }
+
+    world_manager.moveObject(this, temp_pos);
   }
-
-  world_manager.moveObject(this, temp_pos);
 }

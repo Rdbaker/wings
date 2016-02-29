@@ -6,6 +6,7 @@
 // Engine includes.
 #include "Sentry.h"
 #include "include/EventStep.h"
+#include "include/LogManager.h"
 #include "EventNetwork.h"
 #include "NetworkManager.h"
 
