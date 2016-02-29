@@ -37,3 +37,10 @@ if you're running on (and hoping to connect to) "127.0.0.1", you don't need to s
 Once the client connects, both screens should appear. The client will be waiting for the host to send a message to indicate that the game should start.
 
 Once the host starts the game, both games will start.
+
+
+*****************************************
+EXTRA POINTS
+*****************************************
+
+for the extra points I've decided to synchronize the GameStart/GameOver between the client and host
