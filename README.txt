@@ -1,44 +1,39 @@
-SAUCER SHOOT
-Mark Claypool (WPI)
-2016
+SAUCER SHOOT -- 2 player
 
-Saucer Shoot game from Dragonfly tutorial.
+Ryan Baker (WPI)
+rdbaker
 
-Tutorial available online:
 
- http://dragonfly.wpi.edu/tutorial/index.html
+*****************************************
+HOW TO BUILD
+*****************************************
 
-And in book:
 
- Mark Claypool. Dragonfly - Program a Game Engine from Scratch,
- Interactive Media and Game Development, Worcester Polytechnic
- Institute, 2014. Online at: http://dragonfly.wpi.edu/book/
+I've been building on an OSX machine (El Capitan). To make all the necessary files, simply use the command:
 
---------------------------------------------------------------------
+"make"
 
-To build:
+This will build the executable.
 
-0) Setup development environment for Windows, Linux or MacOS.
-See http://dragonfly.wpi.edu/engine/index.html#setup for details.
+There's also a new sprite for the client ship in the sprites directory.
 
-1) Build, as appropriate for the platform (e.g., "make" on Linux or
-Mac, F7 on Windows from Visual Studio).
 
-2) Run game, as appropriate for the platform (e.g., "./game" on
-Linux or Mac, F5 on Windows from Visual Studio)
+*****************************************
+HOW TO RUN
+*****************************************
 
---------------------------------------------------------------------
+to run the server, use:
 
-Directories:
+"./game"
 
-game/ - contains Visual Studio solution files if developing on Microsoft
-  Windows
-sounds/ - contains the sound files used in Saucer shoot
-sprites/ - contains the sprite files used in Saucer shoot
+everything will spin up and, if everything works, it should "printf" a message indicating that it's waiting for the client
 
---------------------------------------------------------------------
+to run the client, use:
 
-Happy shooting!
+"./game -c [IP ADDR]"
 
--- Mark
-claypool@cs.wpi.edu
+if you're running on (and hoping to connect to) "127.0.0.1", you don't need to specify an IP address, otherwise it is required
+
+Once the client connects, both screens should appear. The client will be waiting for the host to send a message to indicate that the game should start.
+
+Once the host starts the game, both games will start.
